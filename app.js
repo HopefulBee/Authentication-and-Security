@@ -42,7 +42,7 @@ async function main() {
             res.render('register');
         })
         .post((req, res) => {
-            bcrypt.hash(req.body.password, saltRounds, function (err, hash) {
+            bcrypt.hash(req.body.password, saltRounds).then((hash) => {
                 //Create new user
                 const newUser = new User({
                     email: req.body.username,
@@ -66,13 +66,13 @@ async function main() {
             const password = req.body.password;
             User.findOne({ email: username }).then(foundUser => {
                 if (foundUser) {
-                    bcrypt.compare(password, foundUser.password, function (err, result) {
+                    bcrypt.compare(password, foundUser.password).then((result) => {
                         // result == true
                         if (result === true) {
                             res.render('secrets');
                         }
                     });
-                    bcrypt.compare(password, foundUser.password, function (err, result) {
+                    bcrypt.compare(password, foundUser.password).then(result => {
                         // result == false
                         if (result === false) {
                             res.send('Wrong Credentials');
@@ -80,7 +80,6 @@ async function main() {
                     });
                 }
             })//endOfTHEN
-
                 .catch((err) => {
                     console.log(err);
                 });
