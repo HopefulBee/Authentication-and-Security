@@ -3,8 +3,9 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const ejs = require('ejs');
 const mongoose = require('mongoose');
-const bcrypt = require('bcrypt');
-const saltRounds = 10;
+const session = require('express-session');
+const passport = require('passport');
+const passportLocalMongoose = require('passport-local-mongoose')
 
 const app = express();
 
@@ -30,7 +31,6 @@ async function main() {
     });
     const User = mongoose.model('User', userSchema);
 
-    //App Routes
     //Home Route
     app.get('/', (req, res) => {
         res.render('home');
@@ -42,18 +42,12 @@ async function main() {
             res.render('register');
         })
         .post((req, res) => {
-            bcrypt.hash(req.body.password, saltRounds).then((hash) => {
-                //Create new user
-                const newUser = new User({
-                    email: req.body.username,
-                    password: hash
-                });
-                newUser.save()
-                    .then(res.render('secrets'))
-                    .catch(err => {
-                        console.log(err);
-                    });
+            const newUser = new User({
+                email: req.body.username,
+                password: req.body.password
             });
+            newUser.save();
+            res.render("secrets");
         });
 
     //Login Route
@@ -64,30 +58,18 @@ async function main() {
         .post((req, res) => {
             const username = req.body.username;
             const password = req.body.password;
-            User.findOne({ email: username }).then(foundUser => {
-                if (foundUser) {
-                    bcrypt.compare(password, foundUser.password).then((result) => {
-                        // result == true
-                        if (result === true) {
-                            res.render('secrets');
-                        }
-                    });
-                    bcrypt.compare(password, foundUser.password).then(result => {
-                        // result == false
-                        if (result === false) {
-                            res.send('Wrong Credentials');
-                        }
-                    });
+
+            User.findOne({email: username}).then(foundUser => {
+                if (foundUser.password != password) {
+                    res.send("Wrong Credentials");
+                } else {
+                    res.render("secrets");
                 }
-            })//endOfTHEN
-                .catch((err) => {
-                    console.log(err);
-                });
+            });
         });
 
     //Port check
     app.listen(4040, () => {
         console.log('Listening on port 4040');
     });
-
 }
